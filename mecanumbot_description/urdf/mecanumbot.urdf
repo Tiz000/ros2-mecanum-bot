@@ -20,12 +20,27 @@
   <xacro:property name="base_size_z" value="0.02" />
   <xacro:property name="base_mass" value="1.000" />
 
+  <xacro:property name="imu_size_x" value="0.1" />
+  <xacro:property name="imu_size_y" value="0.1" />
+  <xacro:property name="imu_size_z" value="0.1" />
+  <xacro:property name="imu_mass" value="0.1" />
+  <xacro:property name="imu_offset_x" value="0.05"/> 
+  <xacro:property name="imu_offset_y" value="0"/>
+  <xacro:property name="imu_offset_z" value="0.1"/>
+
   <xacro:property name="wheel_radius" value="0.03" />
   <xacro:property name="wheel_width" value="0.03" />
-  <xacro:property name="wheel_offset_x" value="0.19"/>
+  <xacro:property name="wheel_offset_x" value="0.19"/> <!-- wheels offset dal centro del telaio -->
   <xacro:property name="wheel_offset_y" value="0.22"/>
   <xacro:property name="wheel_offset_z" value="-0.03"/>
   <xacro:property name="wheel_mass" value="0.500"/>
+
+  <xacro:property name="lidar_radius" value="0.05" />  
+  <xacro:property name="lidar_width" value="0.04" />
+  <xacro:property name="lidar_offset_x" value="0.122"/> <!-- wheels offset dal centro del telaio -->
+  <xacro:property name="lidar_offset_y" value="0"/>
+  <xacro:property name="lidar_offset_z" value="0.212"/>
+  <xacro:property name="lidar_mass" value="0.100"/>
 
   <xacro:macro name="box_inertia" params="m x y z">
     <inertia ixx="${m*(y*y+z*z)/12}" ixy="0" ixz="0"
@@ -42,12 +57,13 @@
 
   <link name="base_footprint" />
 
+<!-- chassis -->
   <joint name="base_joint" type="fixed">
     <parent link="base_footprint" />
     <child link="base_link" />
     <origin xyz="0 0 0" rpy="0 0 0" />
   </joint>
-  <link name="base_link">
+  <link name="base_link"> 
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0" />
       <geometry>
@@ -68,7 +84,70 @@
     </inertial>
   </link>
 
-  <joint name="fl_wheel_joint" type="continuous">
+  <!-- imu -->
+  <joint name="imu_joint" type="fixed">
+    <parent link="base_link" />
+    <child link="imu_link" />
+    <origin xyz="${imu_offset_x} ${imu_offset_y} ${imu_offset_z}" rpy="0 0 0" />
+  </joint>
+  <link name="imu_link"> 
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="${imu_size_x} ${imu_size_y} ${imu_size_z}" />
+      </geometry>
+      <material name="black" />
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>   
+        <box size="${imu_size_x} ${imu_size_y} ${imu_size_z}" />
+      </geometry>
+    </collision>
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+      <mass value="${imu_mass}"/>
+      <xacro:box_inertia m="${imu_mass}" x="${imu_size_x}" y="${imu_size_y}" z="${imu_size_z}"/>
+    </inertial>
+  </link>
+
+
+<!-- lidar -->
+  <joint name="laser_joint" type="fixed">
+      <parent link="base_link"/>
+      <child link="laser_frame"/>
+      <origin xyz="${-lidar_offset_x} ${-lidar_offset_y} ${lidar_offset_z}" rpy="0 0 0"/> 
+  </joint>
+  <link name="laser_frame">
+      <visual>
+          <geometry>
+              <cylinder radius="${lidar_radius}" length="${lidar_width}"/>
+          </geometry>
+          <material name="black"/>
+      </visual>
+      <visual>
+          <origin xyz="0 0 ${-lidar_width}"/>
+          <geometry>
+              <cylinder radius="0.01" length="0.1"/>
+          </geometry>
+          <material name="black"/>
+      </visual>
+      <collision>
+          <geometry>
+              <cylinder radius="${lidar_radius}" length="${lidar_width}"/>
+          </geometry>
+      </collision>
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <mass value="${lidar_mass}" />
+        <xacro:cylinder_inertia m="${lidar_mass}" r="${lidar_radius}" w="${lidar_width}" />
+      </inertial>      
+  </link>  
+
+
+
+<!-- ruota anteriore sinistra -->
+  <joint name="fl_wheel_joint" type="continuous"> 
     <parent link="base_link"/>
     <child link="fl_wheel_link"/>
     <origin xyz="${-wheel_offset_x} ${-wheel_offset_y} ${wheel_offset_z}" rpy="0 0 ${-M_PI/2}" />
@@ -95,7 +174,8 @@
     </inertial>
   </link>
 
-  <joint name="fr_wheel_joint" type="continuous">
+<!-- ruota anteriore destra -->
+  <joint name="fr_wheel_joint" type="continuous"> 
     <parent link="base_link"/>
     <child link="fr_wheel_link"/>
     <origin xyz="${-wheel_offset_x} ${wheel_offset_y} ${wheel_offset_z}" rpy="0 0 ${M_PI/2}" />
@@ -122,7 +202,8 @@
     </inertial>
   </link>
 
-  <joint name="rl_wheel_joint" type="continuous">
+<!-- ruota posteriore sinistra -->
+  <joint name="rl_wheel_joint" type="continuous"> 
     <parent link="base_link"/>
     <child link="rl_wheel_link"/>
     <origin xyz="${wheel_offset_x} ${-wheel_offset_y} ${wheel_offset_z}" rpy="0 0 ${-M_PI/2}" />
@@ -149,7 +230,8 @@
     </inertial>
   </link>
 
-  <joint name="rr_wheel_joint" type="continuous">
+<!-- ruota posteriore destra -->
+  <joint name="rr_wheel_joint" type="continuous"> 
     <parent link="base_link"/>
     <child link="rr_wheel_link"/>
     <origin xyz="${wheel_offset_x} ${wheel_offset_y} ${wheel_offset_z}" rpy="0 0 ${M_PI/2}" />
@@ -176,7 +258,8 @@
     </inertial>
   </link>
 
-  <ros2_control name="mecanumbot" type="system">
+<!-- ros2_control plugin -->
+  <ros2_control name="mecanumbot" type="system"> 
     <hardware>
       <plugin>mecanumbot_hardware/MecanumbotHardware</plugin>
       <param name="serial_port">/dev/ttyACM0</param>
